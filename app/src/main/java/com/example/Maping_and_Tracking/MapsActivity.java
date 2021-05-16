@@ -160,7 +160,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // وضع علامه على الخريطة مع تغيير شكلها
                 MarkerOptions markerOptions = new MarkerOptions().position(latLng).icon(bitmapDescriptorFromVector(getApplicationContext(),R.drawable.ic_location));
-
                 mMap.addMarker(markerOptions);
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
 
