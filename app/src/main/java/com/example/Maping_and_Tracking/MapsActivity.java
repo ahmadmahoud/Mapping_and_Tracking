@@ -1,9 +1,16 @@
 package com.example.Maping_and_Tracking;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 import androidx.fragment.app.FragmentActivity;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +19,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -146,12 +155,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.i(TAG, "onEvent: "+servicesLocation);
                 LatLng latLng = new LatLng(servicesLocation.getLat(),servicesLocation.getLng());
 
-                MarkerOptions markerOptions = new MarkerOptions().position(latLng);
+//                MarkerOptions marker = new MarkerOptions().position(latLng);
+//                marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_location));
 
-                mMap.addMarker(new MarkerOptions().position(latLng));
+                // وضع علامه على الخريطة مع تغيير شكلها
+                MarkerOptions markerOptions = new MarkerOptions().position(latLng).icon(bitmapDescriptorFromVector(getApplicationContext(),R.drawable.ic_location));
+
+                mMap.addMarker(markerOptions);
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
 
             }
         });
     }
+
+    // تغيير شكل العلامه على الخريطة " هذا الكود لا تعدل فيه "
+    private BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorResId) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
 }
