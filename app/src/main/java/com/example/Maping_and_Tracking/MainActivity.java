@@ -12,11 +12,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -40,15 +43,17 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
-@RequiresApi(api = Build.VERSION_CODES.M)
 public class MainActivity extends AppCompatActivity {
     private final int LOCATION_REQUEST_CODE = 1001;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private static final String TAG = "MainActivity";
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-    Button check;
+    Button check , getting;
 
     private LocationRequest locationRequest;
     private LocationManager manager;
@@ -59,23 +64,92 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        check = findViewById(R.id.check);
-        manager = (LocationManager) getSystemService( MainActivity.LOCATION_SERVICE );
+        // define
+        manager = (LocationManager) getSystemService(MainActivity.LOCATION_SERVICE);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        getting = findViewById(R.id.btn_getting_data);
 
+        // maps
         locationRequest = LocationRequest.create();
         locationRequest.setInterval(4000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+        // get user data location ( geocoder )
+        getting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getting_your_data_location();
+            }
+        });
 
-        // التاكد من ان الموقع يعمل على هاتف المستخدم
-        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+    }
+
+    //  ما يحدث عندما يفتح التطبيق
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            getLastLocation();
+            cheackSetSettingAndStartLocation();
+        } else {
+            askForPermission();
+        }
+
+        // chek on or off wifi
+        check = findViewById(R.id.check);
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             check_Gps_ON_or_OFF();
+        }
+        else {
+            check.setVisibility(View.GONE);
+        }
+
+    }
+
+    private void getting_your_data_location() {
+        TextView t1, t2, t3, t4, t5, t6 , t7;
+
+        t1 = findViewById(R.id.tv_1);
+        t2 = findViewById(R.id.tv_2);
+        t3 = findViewById(R.id.tv_3);
+        t4 = findViewById(R.id.tv_4);
+        t5 = findViewById(R.id.tv_5);
+        t6 = findViewById(R.id.tv_6);
+        t7 = findViewById(R.id.tv_7);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        check.setVisibility(View.GONE);
 
+        fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+            @Override
+            public void onComplete(@NonNull Task<Location> task) {
+
+                Location location = task.getResult();
+                if (location != null) {
+                    try {
+                    Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                        List<Address> address = geocoder.getFromLocation(
+                                location.getLatitude(),location.getLongitude(),1
+                        );
+
+                        t1.setText(Html.fromHtml("<font color ='#57837B'><b>Latitude :</b><br></font>" +address.get(0).getLatitude()));
+                        t2.setText(Html.fromHtml("<font color ='#57837B'><b>Longitude :</b><br></font>" +address.get(0).getLongitude()));
+                        t3.setText(Html.fromHtml("<font color ='#57837B'><b>CountryName :</b><br></font>" +address.get(0).getCountryName()));
+                        t4.setText(Html.fromHtml("<font color ='#57837B'><b>CountryCode :</b><br></font>" +address.get(0).getCountryCode()));
+                        t5.setText(Html.fromHtml("<font color ='#57837B'><b>AddressLine :</b><br></font>" +address.get(0).getAddressLine(0)));
+                        t6.setText(Html.fromHtml("<font color ='#57837B'><b>Locality :</b><br></font>" +address.get(0).getLocality()));
+                        t7.setText(Html.fromHtml("<font color ='#57837B'><b>PostalCode :</b><br></font>" +address.get(0).getPostalCode()));
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        });
 
     }
 
@@ -131,8 +205,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-
-
         if (requestCode == LOCATION_REQUEST_SETTING) {
 
             switch (resultCode) {
@@ -159,20 +231,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-    //  ما يحدث عندما يفتح التطبيق
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            getLastLocation();
-            cheackSetSettingAndStartLocation();
-        } else {
-            askForPermission();
-        }
-
-    }
-
 
     // نتيجة البيرميشن
     @Override
@@ -298,5 +356,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
 
 }

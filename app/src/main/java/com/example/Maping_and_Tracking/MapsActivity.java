@@ -1,5 +1,6 @@
 package com.example.Maping_and_Tracking;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -11,10 +12,13 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -28,7 +32,10 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import java.io.IOException;
+import java.util.List;
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener, GoogleMap.OnMapClickListener {
     private static final String TAG = "MapsActivity";
     private GoogleMap mMap;
     private Geocoder geocoder;
@@ -52,6 +59,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getserviceslocation_user();
         mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         mMap.setTrafficEnabled(true);
+        mMap.setOnMapLongClickListener(this);
+        mMap.setOnMapClickListener(this);
+
 
         // لتحديد موقع المستخدم عن طريقة زر باعلى الشاشه
 //        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -61,7 +71,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         // التعامل مع عنوان معين وتحديد موقعه على الخريطة
-
 //            LatLng latLng = new LatLng(24.589864,46.6161046);
 //            MarkerOptions markerOptions = new MarkerOptions()
 //                    .position(latLng).title("حديقة العاشر").snippet("مكان رائع تقضي فيه يوم اجازتك");
@@ -73,7 +82,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // كيفية البحث والحصول على معلومات موقع معين
 
 //        try {
-//            List<Address> addresses = geocoder.getFromLocationName("zagazig",1);
+//            List<Address> addresses = geocoder.getFromLocationName("Nasr City",1);
 //
 //            Address address = addresses.get(0);
 //            Log.i(TAG, "onMapReady: "+address.toString());
@@ -98,34 +107,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     // اضافة نقطة وحيده على الخريطة بمجرد الضغط دون اظهار بيانات
-//    @Override
-//    public void onMapClick(@NonNull LatLng latLng) {
-//        mMap.clear();
-//        MarkerOptions markerOptions = new MarkerOptions().position(latLng);
-//        mMap.addMarker(markerOptions);
-//    }
+
+    public void onMapClick(@NonNull LatLng latLng) {
+        mMap.clear();
+        MarkerOptions markerOptions = new MarkerOptions().position(latLng);
+        mMap.addMarker(markerOptions);
+    }
 
     // اضافة نقطة على الخريطة عن طريق الضغط المطول و اظهار بيانات
-//    @Override
-//    public void onMapLongClick(@NonNull LatLng latLng) {
-//        try {
-//            List<Address> addresseslist = geocoder.getFromLocation(latLng.latitude, latLng.latitude, 1);
-//            if (addresseslist.isEmpty()) {
-//                Toast.makeText(this, "No information", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            Address address = addresseslist.get(0);
-//            String streename = address.getAddressLine(0);
-//            Log.i(TAG, "onMapLongClick: " + streename);
-//            mMap.addMarker(new MarkerOptions().position(latLng).title(streename));
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 
+    public void onMapLongClick(@NonNull LatLng latLng) {
+        try {
+            mMap.clear();
+            List<Address> addresseslist = geocoder.getFromLocation(latLng.latitude, latLng.latitude, 1);
+            if (addresseslist.isEmpty()) {
+                Toast.makeText(this, "No information", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Address address = addresseslist.get(0);
+            String streename = address.getAddressLine(0);
+            Log.i(TAG, "onMapLongClick: " + streename);
+            mMap.addMarker(new MarkerOptions().position(latLng).title(streename));
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
     // الحصول على بيانات من الفاير ستور "فايز بيز"
 //    private void getserviceslocation() {
 //        firebaseFirestore.collection("location_map").addSnapshotListener(new EventListener<QuerySnapshot>() {
